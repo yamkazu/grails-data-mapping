@@ -19,7 +19,6 @@ import grails.core.GrailsDomainClassProperty
 import grails.util.Environment
 import groovy.transform.CompileStatic
 import groovy.util.logging.Commons
-import org.grails.config.PropertySourcesConfig
 import org.grails.orm.hibernate.*
 import org.grails.orm.hibernate.cfg.GrailsDomainBinder
 import org.grails.orm.hibernate.proxy.HibernateProxyHandler
@@ -115,10 +114,6 @@ class HibernateDatastoreSpringInitializer extends AbstractDatastoreInitializer {
             hibernateEventListeners(HibernateEventListeners)
             // Useful interceptor for wrapping Hibernate behavior
             persistenceInterceptor(AggregatePersistenceContextInterceptor)
-            // default interceptor, can be overridden for extensibility
-            if(!beanDefinitionRegistry.containsBeanDefinition("entityInterceptor")) {
-                entityInterceptor(EmptyInterceptor)
-            }
             // domain model mapping context, used for configuration
             grailsDomainClassMappingContext(GrailsDomainClassMappingContext, ref(GrailsApplication.APPLICATION_ID))
 
@@ -133,7 +128,8 @@ class HibernateDatastoreSpringInitializer extends AbstractDatastoreInitializer {
                 def sessionFactoryName = isDefault ? defaultSessionFactoryBeanName : "sessionFactory$suffix"
 
                 def hibConfig = config.getProperty("hibernate$suffix", Map, Collections.emptyMap())
-                def dsConfigPrefix = isDefault ? "dataSource" :"dataSources.$dataSourceName"
+                def isMultipleDataSources = config.keySet().any { String key -> key.startsWith('dataSources.') }
+                def dsConfigPrefix = isMultipleDataSources ? "dataSources.dataSource$suffix" : 'dataSource'
                 def ddlAutoSetting = config.getProperty("${dsConfigPrefix}.dbCreate", ddlAuto)
 
 
@@ -198,6 +194,11 @@ Using Grails' default naming strategy: '${ImprovedNamingStrategy.name}'"""
 
                 if (Environment.current.isReloadEnabled()) {
                     "${SessionFactoryHolder.BEAN_ID}$suffix"(SessionFactoryHolder)
+                }
+
+                // default interceptor, can be overridden for extensibility
+                if(!beanDefinitionRegistry.containsBeanDefinition("entityInterceptor$suffix")) {
+                    "entityInterceptor$suffix"(EmptyInterceptor)
                 }
 
                 // the main SessionFactory bean

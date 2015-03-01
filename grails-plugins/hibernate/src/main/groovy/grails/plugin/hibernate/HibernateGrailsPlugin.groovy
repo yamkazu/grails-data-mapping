@@ -4,7 +4,6 @@ import grails.config.Config
 import grails.core.GrailsApplication
 import grails.core.GrailsClass
 import grails.core.GrailsDomainClassProperty
-import grails.core.support.GrailsApplicationAware
 import grails.orm.bootstrap.HibernateDatastoreSpringInitializer
 import grails.plugins.Plugin
 import groovy.transform.CompileStatic
@@ -45,12 +44,12 @@ class HibernateGrailsPlugin extends Plugin {
         Map dataSources = config.getProperty('dataSources', Map, [:])
 
         if(dataSources) {
-            for (name in config.keySet()) {
+            for (String name in dataSources.keySet()) {
                 if(name == 'dataSource') {
                     datasourceNames << GrailsDomainClassProperty.DEFAULT_DATA_SOURCE
                 }
                 else {
-                    datasourceNames << name
+                    datasourceNames << name - 'dataSource_'
                 }
             }
         }
